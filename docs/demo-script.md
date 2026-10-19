@@ -7,8 +7,8 @@ an actual component rendering, not evidence of a live integration run.
 ## Before recording
 
 1. Follow the root [README](../README.md) on a machine with network, localhost
-   sockets, and browser process permissions. Run `pnpm install` and `pnpm build`. The implementation sandbox could not
-   complete live provider/research checks or a browser session.
+   sockets, and browser process permissions. Run `pnpm install` and `pnpm build`. Final checks passed in Chromium, with real Cline/Parallel smokes and an approved
+   Gmail/Linear test. The full research workspace still needs a pre-run.
 2. Initialize a separate real demo workspace. Put keys in its ignored `.env`.
    Prefer `CLINE_API_KEY` until a live OAuth smoke verifies stored-login reuse.
    Check the chosen model through `ensemble doctor`; do not guess model IDs.
@@ -28,8 +28,8 @@ an actual component rendering, not evidence of a live integration run.
    `top-10.csv.sources.json`, company reports, and the ranking. Verify that the
    result describes actual research rather than SIMULATED preview content.
 7. Start `ensemble dev --paused`, open the UI, and verify graph, node drawer,
-   logs, history, approvals, and file links. Keep the editor beside it. PDF
-   export and the rendered deck are deferred at the user’s request. For a
+   logs, history, approvals, and file links. Keep the editor beside it. Application
+   PDF export remains deferred; the [deck PDF](../deck/deck.pdf) is ready. For a
    deterministic preflight, disable
    `agents_md.summaries`; pausing prompt scheduling alone does not disable them.
 8. Prepare one additional **verified** CSV row with all six columns. Verify its
@@ -90,5 +90,5 @@ claim that Gmail/Linear writes were verified.
 
 The owner records/uploads the video and publishes the repository/deck URLs.
 Repository creation or pushing requires the owner's approval. The included
-[deck source](../deck/deck.md) is a local submission asset. Rendering its PDF is
-deferred; this document does not claim that any public URLs have been created.
+[deck source](../deck/deck.md) and [rendered PDF](../deck/deck.pdf) are local
+submission assets; this document does not claim that any public URLs have been created.

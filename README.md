@@ -7,12 +7,11 @@ fans research out across a list, keeps AGENTS.md current, and records each run i
 git. Cline SDK sessions do the work, Parallel supplies cited research, and
 Composio actions wait for approval of an exact, reviewable plan.
 
-![Ensemble graph component rendered with synthetic preview data](docs/assets/graph.png)
+![Ensemble running in Chromium with simulated research](docs/assets/browser-graph.png)
 
-*The actual native graph component rendered with clearly labeled synthetic data.
-This is a component rendering, not a browser screenshot. [SVG version](docs/assets/graph.svg).*
+*Actual browser screenshot. Research and action receipts in this preview are explicitly simulated.*
 
-[Five-slide Marp deck source](deck/deck.md) ·
+[Five-slide deck PDF](deck/deck.pdf) · [Marp source](deck/deck.md) ·
 [Two-minute demo script](docs/demo-script.md) · [Technical specification](SPEC.md)
 
 ## Install and run
@@ -20,7 +19,8 @@ This is a component rendering, not a browser screenshot. [SVG version](docs/asse
 Requires Linux or macOS (WSL works), Git, **Node ≥ 22.22.3**, and pnpm. The repo
 declares pnpm 11.5.2. For real runs, provide Cline authentication, a Parallel API
 key, and connected Gmail/Linear accounts through the selected Composio backend.
-PDF export and the rendered deck PDF are deferred at the user’s request.
+Application PDF export remains deferred. The five-slide deck is available as a
+[PDF](deck/deck.pdf); regenerate it with `pnpm deck` using an installed Chrome or Chromium browser.
 
 After cloning this repository:
 
@@ -303,12 +303,12 @@ librarian charges even when no new web research is needed.
 | Capability | Implementation and verification |
 | --- | --- |
 | Dependency graph, fan-out, watcher, cron, git, librarian, approvals | Implemented and tested with real local files/git. Native CSV, watcher, five-field cron, and SVG graph implementations are real local code. |
-| Cline agent sessions | Real `ClineCore` with guarded tools, tested against a mock OpenAI-compatible server. Live provider/OAuth completion remains unverified in the restricted implementation environment. |
-| Parallel research | Real pinned SDK adapters, polling, cache, processor caps, citations and sidecars; tested with injected SDK/fetch responses. Live smoke attempts failed at the network boundary. |
-| Composio actions | Real SDK/CLI adapters and deterministic executor, tested with recording/mock backends. No real demo drafts or Linear issue have been created or verified by these tests. |
+| Cline agent sessions | Real `ClineCore` with guarded tools, tested against a mock OpenAI-compatible server. Live API-key doctor and guarded file-write/completion sessions passed; stored OAuth failed and uses the API-key fallback. |
+| Parallel research | Real pinned SDK adapters, polling, cache, processor caps, citations and sidecars; tested with injected SDK/fetch responses. A live fast-search smoke passed. The full dataset/research pipeline has not been pre-run. |
+| Composio actions | Real SDK/CLI adapters and deterministic executor, tested with recording/mock backends. A user-approved live Cline plan created three own-address Gmail drafts and one Linear issue; provider readback and idempotent replay passed. |
 | `dev --simulate` | Explicit synthetic agent/research outputs and simulated receipts. Every preview is labeled; this is never the production default. |
-| UI | Actual React components, rendered-content/security tests, static-serving/API tests, and a native SVG graph. The image above is an actual component rendering with synthetic data. Browser interaction and optional XYFlow rendering still need a normal-machine check. |
-| PDF and deck | PDF export and rendered deck PDF are deferred at the user’s request. The five-slide Marp source is included. |
+| UI | Actual React components, rendered-content/security tests, static-serving/API tests, and a native SVG graph. Eight Chromium scenarios passed, including editor-driven cascades, fan-out, drawers/history, simulated approvals, file links, and activity. The screenshot uses synthetic research. |
+| PDF and deck | Application PDF export is deferred. The five-slide Marp deck PDF is rendered and visually checked. |
 
 Core pins are `@cline/sdk@0.0.95`, `parallel-web@1.3.5`, and
 `@composio/core@0.25.0`. TypeScript uses ESM with `moduleResolution: Bundler`;
@@ -318,11 +318,10 @@ at the top level. See [spike outcomes](docs/spikes.md),
 [milestone verification](docs/progress.md), and
 [restricted-environment details](docs/environment-offline.md).
 
-The implementation environment blocks external network access, listening
-sockets, browser launch, and ordinary `.git` writes. Those restrictions are
-documented rather than presented as successful live integration tests. Normal
-clone setup uses ordinary git and package installation; the offline bootstrap
-helper and implementation metadata are not prerequisites.
+Initial sandbox restrictions were lifted for final testing. Normal pnpm installation,
+production build, TypeScript, 123 tests, browser interaction and live integration
+smokes now pass. See [final verification](docs/live-verification.md). The full
+10-company live research workspace remains a separate pre-run before recording.
 
 Before recording, run the live Cline/Parallel checks, open the daemon in a real
 browser and explicitly approve the demo drafts/ticket in your
@@ -336,6 +335,8 @@ video are owner actions; no published submission URLs are claimed here.
 pnpm test
 pnpm typecheck
 pnpm build
+pnpm exec playwright install chromium
+pnpm smoke:browser
 ```
 
 Tests use FakeRunner, a local mock LLM, and injected integration backends; they

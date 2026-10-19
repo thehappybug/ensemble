@@ -17,9 +17,10 @@
     "build": "tsup src/cli.ts --format esm --out-dir dist --sourcemap && vite build --config ui/vite.config.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "deck": "marp deck/deck.md --pdf --allow-local-files --no-sandbox",
+    "deck": "marp deck/deck.md --pdf --html --allow-local-files --output deck/deck.pdf",
     "build:offline": "node scripts/build-offline.mjs",
-    "ensemble": "node dist/cli.js"
+    "ensemble": "node dist/cli.js",
+    "smoke:browser": "node scripts/browser-smoke.mjs"
   },
   "dependencies": {
     "@cline/sdk": "0.0.95",

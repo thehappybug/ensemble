@@ -28,6 +28,11 @@ style: |
   section.lead h2 { color: #edf2fa; font-size: 42px; }
   .eyebrow { color: #91adab; font-size: 18px; font-weight: 650; letter-spacing: 4px; margin-bottom: 26px; }
   .small { font-size: 22px; color: #91a2b9; }
+  section.architecture pre { font-size: 21px; line-height: 1.3; padding: 22px 28px; }
+  section.architecture .small { font-size: 21px; }
+  section.demo { font-size: 28px; }
+  section.demo li { margin: 10px 0; }
+  section.demo .small { font-size: 20px; line-height: 1.4; }
 ---
 
 <!-- _class: lead -->
@@ -72,6 +77,8 @@ Ensemble gives their files **dependencies, freshness, and an approval queue**.
 
 ---
 
+<!-- _class: architecture -->
+
 <p class="eyebrow">HOW IT WORKS</p>
 
 # Files in. Reviewed actions out.
@@ -94,9 +101,11 @@ Ensemble gives their files **dependencies, freshness, and an approval queue**.
 
 ---
 
+<!-- _class: demo -->
+
 <p class="eyebrow">DEMO + NEXT</p>
 
-# Change one file. Watch the right work move.
+# One edit. The right work reruns.
 
 1. Edit ICP context: only downstream synthesis reruns.
 2. Add a company row: one new company chain appears.

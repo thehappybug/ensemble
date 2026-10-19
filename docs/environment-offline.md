@@ -1,3 +1,8 @@
+# Historical restricted-environment results
+
+These results describe the initial sandbox only. Permissions were later enabled;
+see [current live and browser verification](live-verification.md).
+
 # Restricted build environment checks
 
 Checked during implementation on 2026-10-19. These are local environment results,
