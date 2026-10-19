@@ -14,10 +14,18 @@ export async function applyState(root:string,graph:Graph,state:StateData):Promis
   if(['invalid','blocked','pending-expansion','awaiting-approval'].includes(node.status))continue;
   const r=state.nodes[node.id],success=r?.lastSuccess;
   const outputs=Object.fromEntries(await Promise.all(requiredOutputs(node).map(async p=>[p,await fileHash(path.join(root,p))])));
-  if(success&&Object.entries(outputs).some(([p,h])=>h!=='missing'&&success.outputs[p]!==h)){node.status='modified';node.reason='output edited by hand; accept edit or rerun with force';continue;}
+  const edited=!!success&&Object.entries(outputs).some(([p,h])=>h!=='missing'&&success.outputs[p]!==h);
+  if(edited&&node.kind!=='action'){node.status='modified';node.reason='output edited by hand; accept edit or rerun with force';continue;}
   if(r?.lastRun?.status==='failed'&&r.lastRun.fingerprint===node.fingerprint){node.status='failed';node.reason=r.lastRun.error;continue;}
   if(success?.fingerprint===node.fingerprint&&Object.values(outputs).every(h=>h!=='missing')){
-   node.status=node.kind==='action'?'awaiting-approval':'fresh';node.reason=node.kind==='action'?(r?.rejected===node.fingerprint?'plan rejected; replan to reconsider':'review the exact plan before execution'):undefined;
+   node.status=node.kind==='action'?'awaiting-approval':'fresh';node.reason=undefined;
+   if(node.kind==='action'){
+    const planPath=node.outputs.find(p=>p.endsWith('.plan.json')),planHash=planPath?outputs[planPath]:undefined;
+    const approval=r?.approval;
+    if(approval&&approval.plan_sha256===planHash&&approval.status==='executing'){node.status='executing';node.reason='executing the approved exact plan';}
+    else if(approval&&approval.plan_sha256===planHash&&approval.status==='executed'){node.status=approval.dry_run?'awaiting-approval':'fresh';node.reason=approval.dry_run?'SIMULATED execution complete; approve for real when ready':'approved plan executed';}
+    else node.reason=r?.rejected===node.fingerprint?'plan rejected; edit or replan to reconsider':approval&&approval.plan_sha256===planHash&&approval.status==='failed'?`execution failed; review receipt and retry the same plan: ${approval.error??''}`:edited?'plan edited; review the exact JSON before execution':'review the exact plan before execution';
+   }
   }else{node.status='stale';node.reason=!success?'never run':Object.values(outputs).includes('missing')?'output missing':'prompt, input, model or scheduled tick changed';}
  }
  for(const node of graph.nodes){if(node.status!=='stale')continue;const missing=await Promise.all(node.inputs.map(async p=>(await fileHash(path.join(root,p)))==='missing'?p:null));if(missing.some(Boolean)&&node.dependencies.every(id=>{const upstream=graph.nodes.find(n=>n.id===id);return upstream&&['fresh','modified','awaiting-approval'].includes(upstream.status);})){node.status='blocked';node.reason='missing input '+missing.filter(Boolean).join(', ');}}

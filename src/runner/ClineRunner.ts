@@ -9,6 +9,7 @@ import { resolveAuth, type ResolvedAuth } from './auth.js';
 import { agentsChain, ENSEMBLE_SYSTEM_ADDENDUM, runContract } from './contract.js';
 import { allowedOutputPaths, assertAllowedWrite, checkWriteGuard } from './guard.js';
 import { makeEnsembleTools, type CompletionState } from './tools/ensemble.js';
+import type { PlanningAdapter } from '../actions/plan.js';
 
 type CoreOptions = NonNullable<Parameters<typeof ClineCore.create>[0]>;
 export interface ClineRunnerOptions {
@@ -16,6 +17,7 @@ export interface ClineRunnerOptions {
   coreFactory?: (options: CoreOptions) => Promise<ClineCore>;
   toolFactory?: (node: Node, context: RunContext) => AgentTool[] | Promise<AgentTool[]>;
   authResolver?: (node: Node, context: RunContext) => Promise<ResolvedAuth>;
+  planningAdapter?: (node: Node, context: RunContext) => PlanningAdapter | Promise<PlanningAdapter>;
 }
 
 export class ClineRunner implements Runner {
@@ -38,7 +40,7 @@ export class ClineRunner implements Runner {
   }
 
   async run(node: Node, context: RunContext): Promise<RunOutcome> {
-    if (node.kind !== 'prompt') throw new Error('Action planning requires the action adapter introduced in M4');
+    if (node.kind === 'fanout') throw new Error('Run an expanded prompt or action instance');
     if (context.signal.aborted) throw new Error('interrupted');
     const auth = this.options.authResolver ? await this.options.authResolver(node, context) : await resolveAuth(node, context.config, context.root);
     const core = await this.core(context.root);
@@ -56,14 +58,19 @@ export class ClineRunner implements Runner {
       if (llmCost + parallelCost > budget) stop(`budget exceeded ($${budget})`);
     };
     const toolContext = { ...context, emit };
+    const planning = node.kind === 'action' ? await (this.options.planningAdapter ?? (async (currentNode, currentContext) => {
+      const { createPlanningAdapter } = await import('../actions/plan.js');
+      return createPlanningAdapter(currentNode, currentContext);
+    }))(node, toolContext) : undefined;
     const factory = this.options.toolFactory ?? (async (currentNode, currentContext) => {
       const { makeParallelTools } = await import('./tools/parallel.js');
-      return makeParallelTools(currentNode, currentContext);
+      const { makeComposioTools } = await import('./tools/composio.js');
+      return [...makeParallelTools(currentNode, currentContext), ...await makeComposioTools(currentNode, currentContext)];
     });
-    const tools = [...makeEnsembleTools(node, toolContext, completion), ...await factory(node, toolContext)];
+    const tools = [...makeEnsembleTools(node, toolContext, completion), ...await factory(node, toolContext), ...(planning?.tools ?? [])];
     const chain = await agentsChain(context.root, node.path);
     const systemPrompt = [getClineDefaultSystemPrompt({ rootPath: context.root, cwd: context.root, platform: process.platform, mode: 'act', ide: 'Terminal Shell' }), ENSEMBLE_SYSTEM_ADDENDUM, chain].filter(Boolean).join('\n\n');
-    const prompt = await runContract(node, context);
+    const prompt = await runContract(node, context) + (planning?.instruction ?? '');
     const unsubscribe = core.subscribe((event: CoreSessionEvent) => {
       if (event.type !== 'agent_event') return;
       const current = event.payload.event;
@@ -93,7 +100,7 @@ export class ClineRunner implements Runner {
         config: { ...auth, sessionId: context.runId, cwd: context.root, workspaceRoot: context.root, systemPrompt,
           mode: 'act', enableTools: true, enableSpawnAgent: false, enableAgentTeams: false,
           disableMcpSettingsTools: true, maxIterations: context.config.llm.max_iterations },
-        toolPolicies: { '*': { autoApprove: true }, run_commands: { enabled: node.fm.tools.shell }, fetch_web_content: { enabled: false }, submit_and_exit: { enabled: false }, ask_question: { enabled: false } },
+        toolPolicies: { '*': { autoApprove: true }, run_commands: { enabled: !planning && node.fm.tools.shell }, ...(planning ? { editor: { enabled: false }, apply_patch: { enabled: false } } : {}), fetch_web_content: { enabled: false }, submit_and_exit: { enabled: false }, ask_question: { enabled: false } },
         localRuntime: { configExtensions: [], extraTools: tools, hooks: { beforeTool: ({ tool, input }) => {
           const denied = checkWriteGuard(context.root, node, context.runId, tool.name, input);
           if (denied) emit({ type: 'guard.denied', tool: tool.name, reason: denied.reason });
@@ -103,6 +110,7 @@ export class ClineRunner implements Runner {
       if (stopped || context.signal.aborted) throw new Error(stopped ?? 'interrupted');
       if (session.result?.finishReason !== 'completed') throw new Error(`Cline run failed: ${session.result?.finishReason ?? 'no result'}${session.result?.text ? `: ${session.result.text}` : ''}`);
       if (!completion.called) throw new Error('Cline run did not call ensemble_complete');
+      await planning?.finalize(completion.summary);
       for (const output of requiredOutputs(node)) {
         assertAllowedWrite(context.root, node, context.runId, output);
         const file = path.join(context.root, output), hash = await fileHash(file);

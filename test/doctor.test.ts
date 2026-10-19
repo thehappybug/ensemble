@@ -1,0 +1,8 @@
+import {mkdtemp,writeFile} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import path from 'node:path';
+import {expect,it} from 'vitest';
+import {configSchema} from '../src/config.js';
+import {doctor} from '../src/doctor.js';
+it('doctor checks configured backends and tiny probes through injected interfaces without spending credits',async()=>{const root=await mkdtemp(path.join(tmpdir(),'ensemble-doctor-'));await writeFile(path.join(root,'ensemble.yaml'),'version: 1');const config=configSchema.parse({vars:{demo_recipient:'self@my-domain.test'}});let calls=0;const result=await doctor(root,{config,smokeParallel:true,clineProbe:async()=>{calls++;return 'one-token mock passed';},parallelProbe:async()=>{calls++;return 'fast mock passed';},connectionsProbe:async()=>[{toolkit:'gmail',status:'ACTIVE'},{toolkit:'linear',status:'CONNECTED'}]});expect(calls).toBe(2);expect(result.filter(c=>c.status==='error')).toEqual([]);expect(result.find(c=>c.check==='gmail')?.status).toBe('ok');});
+it('doctor reports errors and explicit skipped checks without substituting live success',async()=>{const root=await mkdtemp(path.join(tmpdir(),'ensemble-doctor-'));await writeFile(path.join(root,'bad.prompt.md'),'---\noutputs: []\n---\nbad');const result=await doctor(root,{config:configSchema.parse({}),smokeCline:false,parallelProbe:async()=>{throw new Error('must not be called');},connectionsProbe:async()=>{throw new Error('backend unavailable');}});expect(result.find(c=>c.check==='workspace')?.status).toBe('error');expect(result.find(c=>c.check==='Cline auth')?.status).toBe('warn');expect(result.find(c=>c.check==='Composio connections')?.detail).toBe('backend unavailable');});

@@ -36,10 +36,10 @@ export function makeParallelTools(node:Node,ctx:RunContext,service?:ParallelServ
   function options(toolContext?:{signal?:AbortSignal;emitUpdate?:(event:unknown)=>void}):CallOptions {
     return {signal:toolContext?.signal?AbortSignal.any([ctx.signal,toolContext.signal]):ctx.signal,noCache:ctx.noCache,emit:event=>{ctx.emit(event);toolContext?.emitUpdate?.(event);}};
   }
-  function safeOutput(output:string,sidecar=false):string {
+  function safeOutput(output:string,_sidecar=false):string {
     const resolved=path.resolve(ctx.root,output),relative=toPosix(path.relative(ctx.root,resolved));assertSafePath(ctx.root,relative);
     const temporary=`.ensemble/tmp/${ctx.runId}/`;
-    const allowed=node.outputs.includes(relative)||relative.startsWith(temporary)||(sidecar&&node.outputs.some(output=>['.csv','.json'].includes(path.extname(output))&&relative===output+'.sources.json'));
+    const allowed=node.outputs.includes(relative)||relative.startsWith(temporary);
     if(!allowed)throw new Error(`Write denied: ${relative}; choose a declared output or ${temporary}`);
     return resolved;
   }

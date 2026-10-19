@@ -28,7 +28,14 @@ export async function clonePrompt(root:string,source:string,destination?:string)
  assertSafePath(root,target);if(await exists(path.join(root,target)))throw new Error('File exists: '+target);
  const data:Record<string,any>={...parsed.data,derived_from:source};delete data.id;
  if(Array.isArray(data.outputs)){const used=new Set<string>();const collect=async(dir:string)=>{for(const entry of await readdir(dir,{withFileTypes:true})){if(entry.name.startsWith('.')||entry.name==='node_modules')continue;const file=path.join(dir,entry.name);if(entry.isDirectory())await collect(file);else if(entry.name.endsWith('.prompt.md'))try{const p=matter(await readFile(file,'utf8'));for(const o of p.data.outputs??[])used.add(resolvePath(root,path.relative(root,file),o));}catch{}}};await collect(root);
-  data.outputs=data.outputs.map((output:string)=>{const baseOutput=output.startsWith('/')?output:path.posix.join(path.posix.relative(path.posix.dirname(target!),path.posix.dirname(source)),output);let v=2,newOutput:string;do{newOutput=baseOutput.replace(/(\.[^/.]+)?$/,(extension)=>`-v${v++}${extension}`);}while(used.has(resolvePath(root,target!,newOutput))||existsSyncWorkspace(root,target!,newOutput));return newOutput;});
+  const originals:string[]=data.outputs,mapped=new Map<string,string>();
+  const relocate=(output:string)=>output.startsWith('/')?output:path.posix.join(path.posix.relative(path.posix.dirname(target!),path.posix.dirname(source)),output);
+  const occupied=(output:string)=>used.has(resolvePath(root,target!,output))||existsSyncWorkspace(root,target!,output);
+  const versionOutput=(output:string)=>{const baseOutput=relocate(output);let v=2,newOutput:string;do{newOutput=baseOutput.replace(/(\.[^/.]+)?$/,(extension)=>`-v${v++}${extension}`);}while(occupied(newOutput)||(originals.includes(output+'.sources.json')&&occupied(newOutput+'.sources.json')));return newOutput;};
+  for(const output of originals)if(!output.endsWith('.sources.json'))mapped.set(output,versionOutput(output));
+  for(const output of originals)if(output.endsWith('.sources.json')){const base=output.slice(0,-'.sources.json'.length);mapped.set(output,mapped.has(base)?mapped.get(base)!+'.sources.json':versionOutput(output));}
+  data.outputs=originals.map(output=>mapped.get(output)!);
+
  }
  if(Array.isArray(data.inputs))data.inputs=data.inputs.map((input:string)=>input.startsWith('/')?input:path.posix.join(path.posix.relative(path.posix.dirname(target!),path.posix.dirname(source)),input));
  if(data.foreach){if(typeof data.foreach==='string')data.foreach=path.posix.join(path.posix.relative(path.posix.dirname(target!),path.posix.dirname(source)),data.foreach);else if(!data.foreach.from.startsWith('/'))data.foreach={...data.foreach,from:path.posix.join(path.posix.relative(path.posix.dirname(target!),path.posix.dirname(source)),data.foreach.from)};}

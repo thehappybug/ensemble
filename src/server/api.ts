@@ -1,5 +1,7 @@
 import { readFile,readdir,realpath,stat } from 'node:fs/promises';
 import path from 'node:path';
+import {SimulationRunner} from '../runner/SimulationRunner.js';
+import {ActionService} from '../actions/service.js';
 import {explainFile} from '../history.js';
 import { Hono } from 'hono';
 import { streamSSE } from 'hono/streaming';
@@ -19,15 +21,21 @@ async function runsFor(runtime:WorkspaceRuntime,node?:string):Promise<RunMeta[]>
   for(const id of entries.filter(id=>runId.test(id)))try{assertSafePath(runtime.root,`.ensemble/runs/${id}/meta.json`);const meta=JSON.parse(await readFile(path.join(directory,id,'meta.json'),'utf8')) as RunMeta;if(!node||meta.node===node)runs.push(meta);}catch(error){if((error as NodeJS.ErrnoException).code!=='ENOENT'&&!(error instanceof SyntaxError))throw error;}
   return runs.sort((a,b)=>b.started_at.localeCompare(a.started_at));
 }
-function detail(node:Node,runtime:WorkspaceRuntime) {return {...node,state:node.status,lastRun:runtime.store.data.nodes[node.id]?.lastRun,costs:{llm:runtime.store.data.nodes[node.id]?.lastRun?.cost??0,parallel:runtime.store.data.nodes[node.id]?.lastRun?.parallel_cost??0}};}
+function detail(node:Node,runtime:WorkspaceRuntime) {return {...node,state:node.status,approval:runtime.store.data.nodes[node.id]?.approval,lastRun:runtime.store.data.nodes[node.id]?.lastRun,costs:{llm:runtime.store.data.nodes[node.id]?.lastRun?.cost??0,parallel:runtime.store.data.nodes[node.id]?.lastRun?.parallel_cost??0}};}
 export function createApi(runtime:WorkspaceRuntime):Hono {
   const app=new Hono(),ids=new WeakMap<WorkspaceEvent,string>();let sequence=0;
   function eventId(event:WorkspaceEvent):string {let id=ids.get(event);if(!id){id=String(++sequence);ids.set(event,id);}return id;}
   app.onError((error,c)=>c.json({error:error.message},error instanceof z.ZodError||error instanceof SyntaxError?400:500));
   // Browser requests must originate from this local UI; reject cross-site writes.
   app.use('/api/*',async(c,next)=>{const origin=c.req.header('origin');if(origin&&origin!==new URL(c.req.url).origin)return c.json({error:'Cross-origin API requests are not allowed'},403);if(c.req.method==='POST'&&c.req.header('content-length')!=='0'&&['/api/run','/api/abort'].includes(c.req.path)&&!c.req.header('content-type')?.startsWith('application/json'))return c.json({error:'Use application/json'},415);await next();});
+  const actions=new ActionService(runtime);
+  app.get('/api/actions/:id',async c=>c.json(await actions.read(c.req.param('id'))));
+  app.post('/api/actions/:id/approve',async c=>{const body=z.object({dryRun:z.boolean().optional(),force:z.boolean().optional(),expectedPlanHash:z.string().min(1)}).strict().parse(await c.req.json());return c.json(await actions.approve(c.req.param('id'),{...body,approvedBy:'ui'}));});
+  app.post('/api/actions/:id/reject',async c=>{const body=z.object({reason:z.string().optional()}).parse(await c.req.json());await actions.reject(c.req.param('id'),body.reason);return c.json({rejected:true});});
+  app.post('/api/actions/:id/plan',async c=>c.json(await actions.plan(c.req.param('id'))));
+  app.put('/api/actions/:id/plan',async c=>{const body=z.object({plan:z.unknown(),expectedPlanHash:z.string().min(1)}).strict().parse(await c.req.json());return c.json(await actions.edit(c.req.param('id'),body.plan,{expectedPlanHash:body.expectedPlanHash}));});
   app.get('/api/explain',async c=>{const file=c.req.query('path');if(!file)return c.json({error:'A path is required'},400);return c.json(await explainFile(runtime,file));});
-  app.get('/api/graph',async c=>{const graph=await runtime.scheduler.refresh();const runs=await runsFor(runtime);return c.json({...graph,nodes:graph.nodes.map(node=>detail(node,runtime)),paused:runtime.scheduler.paused,costs:{llm:runs.reduce((sum,run)=>sum+(run.cost??0),0),parallel:runs.reduce((sum,run)=>sum+(run.parallel_cost??0),0)}});});
+  app.get('/api/graph',async c=>{const graph=await runtime.scheduler.refresh();const runs=await runsFor(runtime);return c.json({...graph,name:runtime.config.name,simulated:runtime.scheduler.runner instanceof SimulationRunner,actionsDryRun:runtime.config.composio.dry_run,nodes:graph.nodes.map(node=>detail(node,runtime)),paused:runtime.scheduler.paused,costs:{llm:runs.reduce((sum,run)=>sum+(run.cost??0),0),parallel:runs.reduce((sum,run)=>sum+(run.parallel_cost??0),0)}});});
   app.get('/api/nodes/:id',async c=>{await runtime.scheduler.refresh();const node=runtime.scheduler.graph.nodes.find(node=>node.id===c.req.param('id'));if(!node)return c.json({error:'Node not found'},404);return c.json({...detail(node,runtime),inputHashes:await hashInputs(runtime.root,node.inputs),runs:await runsFor(runtime,node.id)});});
   app.get('/api/runs/:runId',async c=>{const id=c.req.param('runId');if(!runId.test(id))return c.json({error:'Invalid run id'},400);const running=Object.values(runtime.store.data.nodes).map(record=>record.lastRun).find(run=>run?.runId===id);if(running?.status==='running')return c.json(running);try{assertSafePath(runtime.root,`.ensemble/runs/${id}/meta.json`);return c.json(JSON.parse(await readFile(path.join(runtime.root,'.ensemble/runs',id,'meta.json'),'utf8')));}catch(error){if((error as NodeJS.ErrnoException).code==='ENOENT')return c.json({error:'Run not found'},404);throw error;}});
   app.get('/api/runs/:runId/events',async c=>{const id=c.req.param('runId');if(!runId.test(id))return c.json({error:'Invalid run id'},400);try{assertSafePath(runtime.root,`.ensemble/runs/${id}/events.jsonl`);const text=await readFile(path.join(runtime.root,'.ensemble/runs',id,'events.jsonl'),'utf8');return c.body(text,200,{'content-type':'application/x-ndjson; charset=utf-8'});}catch(error){if((error as NodeJS.ErrnoException).code==='ENOENT')return c.json({error:'Run events not found'},404);throw error;}});

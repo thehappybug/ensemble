@@ -38,7 +38,7 @@ export class Scheduler {
    if(controller.signal.aborted)throw new Error('interrupted');
    const outputs=Object.fromEntries(await Promise.all(requiredOutputs(node).map(async p=>[p,await fileHash(path.join(this.root,p))])));if(Object.values(outputs).includes('missing'))throw new Error('Runner did not produce all required outputs');
    Object.assign(meta,outcome,{status:'completed',outputs,ended_at:new Date().toISOString()});
-   record.lastSuccess={runId,fingerprint:node.fingerprint,outputs,inputs,at:meta.ended_at!};record.rejected=undefined;
+   record.lastSuccess={runId,fingerprint:node.fingerprint,outputs,inputs,at:meta.ended_at!};record.rejected=undefined;if(node.kind==='action')record.approval=undefined;
    await this.afterRun?.(node,meta);record.lastSuccess.commit=meta.commit;
    if(node.kind==='action')this.bus.emit('approval.requested',{node:node.id,runId});
   }catch(e){Object.assign(meta,{status:'failed',error:message(e),ended_at:new Date().toISOString()});emit({type:'error',message:meta.error});}

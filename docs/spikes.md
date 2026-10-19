@@ -10,3 +10,7 @@ All live checks are bounded smoke tests; no deep research or external writes are
 ## Environment constraints
 
 The sandbox mounts `.git` read-only; `git init` fails with `Read-only file system`. Implementation history uses `git --git-dir=.ensemble-git --work-tree=.` locally. This alternate metadata is ignored and is not part of distribution. Normal `git init` remains the default for user workspaces. npm DNS requests fail (`EAI_AGAIN`); broader-access installation was rejected by the automatic permission policy. Offline package caches are used where available. These constraints do not justify substituting simulated success for a live integration result.
+
+## Bounded live attempts after offline runtime verification
+
+The S1 `--real` probe ran with an isolated copy of OAuth settings, one iteration, eight-token output cap and a 25-second abort deadline. It ended `aborted` without a provider completion under the network restriction. This does not verify OAuth reuse or expiry refresh. The separate S4 script attempted one fast search with retries disabled; it failed immediately with a connection-class error and no response shape. No deep research, FindAll, full example run, or external action was attempted.

@@ -17,5 +17,6 @@ export interface Node {
 export interface Graph {nodes:Node[];edges:{source:string;target:string}[];files:string[];warnings:string[]}
 export interface Success {runId:string;fingerprint:string;outputs:Record<string,string>;inputs:Record<string,string>;at:string;commit?:string}
 export interface RunMeta {runId:string;node:string;fingerprint:string;status:string;started_at:string;ended_at?:string;summary?:string;error?:string;model:string;inputs:Record<string,string>;outputs?:Record<string,string>;usage?:unknown;cost?:number;parallel_cost?:number;commit?:string;inputs_commit?:string;warnings?:string[]}
-export interface NodeRecord {lastSuccess?:Success;lastRun?:RunMeta;rejected?:string;scheduledTick?:string}
+export interface ApprovalRecord {status:'approved'|'executing'|'executed'|'failed'|'rejected';plan_sha256:string;approved_at?:string;approved_by?:string;execution_id?:string;dry_run?:boolean;error?:string}
+export interface NodeRecord {lastSuccess?:Success;lastRun?:RunMeta;rejected?:string;scheduledTick?:string;approval?:ApprovalRecord}
 export interface StateData {version:1;nodes:Record<string,NodeRecord>;fanoutApprovals:Record<string,string>}

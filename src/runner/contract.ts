@@ -44,7 +44,7 @@ export async function runContract(node: Node, context: RunContext): Promise<stri
     const removed = Object.keys(context.previous.inputs).filter(file => !node.inputs.includes(file));
     if (removed.length) lines.push('', 'Inputs removed since previous run:', ...removed.map(file => `- ${file}`));
   }
-  lines.push('', '## Required outputs (write every file; do not write anywhere else)');
+  lines.push('', node.kind==='action'?'## Generated plan outputs (Ensemble writes these after you propose steps and complete)':'## Required outputs (write every file; do not write anywhere else)');
   for (const file of requiredOutputs(node)) {
     lines.push(`- ${file}`);
     if (node.fm.incremental && await fileHash(path.join(context.root, file)) !== 'missing') lines.push('  Previous version exists — update it, preserve still-valid content, or report this exact path as unchanged.');

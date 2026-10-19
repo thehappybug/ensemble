@@ -4,8 +4,7 @@ import type { Node } from '../types.js';
 import { requiredOutputs } from '../util.js';
 
 export function allowedOutputPaths(node: Node): string[] {
-  const outputs = requiredOutputs(node);
-  return [...new Set([...outputs, ...outputs.filter(file => /\.(csv|json)$/.test(file)).map(file => file + '.sources.json')])];
+  return requiredOutputs(node);
 }
 
 export function normalizeWritePath(root: string, value: string): string {

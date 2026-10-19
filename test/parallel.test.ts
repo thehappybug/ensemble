@@ -16,7 +16,7 @@ afterEach(async()=>{await Promise.all(cleanups.splice(0).map(cleanup=>cleanup())
 async function setup() {
   const root=await mkdtemp(path.join(os.tmpdir(),'ensemble-parallel-'));roots.push(root);await mkdir(path.join(root,'out'));
   const controller=new AbortController(),events:Request[]=[];
-  const node:Node={id:'research',path:'research.prompt.md',kind:'prompt',fm:frontmatterSchema.parse({outputs:['out/data.csv'],tools:{parallel:true}}),body:'Research',inputs:[],inputPatterns:[],outputs:['out/data.csv'],dependencies:[],fingerprint:'abc',status:'stale',model:'fake',warnings:[]};
+  const node:Node={id:'research',path:'research.prompt.md',kind:'prompt',fm:frontmatterSchema.parse({outputs:['out/data.csv','out/data.csv.sources.json'],tools:{parallel:true}}),body:'Research',inputs:[],inputPatterns:[],outputs:['out/data.csv','out/data.csv.sources.json'],dependencies:[],fingerprint:'abc',status:'stale',model:'fake',warnings:[]};
   const ctx:RunContext={root,config:configSchema.parse({}),runId:'run_test',signal:controller.signal,emit:event=>events.push(event)};
   return {root,controller,events,node,ctx};
 }
@@ -71,6 +71,9 @@ describe('Parallel integration',()=>{
     await expect(execute(tools,'parallel_research',input)).rejects.toThrow('Write denied');
     await expect(execute(tools,'parallel_research',{...input,output_path:'../outside.md'})).rejects.toThrow('escapes');
     await expect(execute(tools,'parallel_research',{query:'Research',processor:'pro'})).rejects.toThrow('maximum base');
+    expect(client.taskRun.create).not.toHaveBeenCalled();
+    node.outputs=['out/data.csv'];
+    await expect(execute(tools,'parallel_dataset',{query:'Dataset',columns:[{name:'name',type:'string',description:'Company'}],processor:'base',output_path:'out/data.csv'})).rejects.toThrow('Write denied: out/data.csv.sources.json');
     expect(client.taskRun.create).not.toHaveBeenCalled();
     vi.mocked(client.taskRun.result).mockResolvedValueOnce({run:{run_id:'run_1'},output:{type:'text',content:'Report',basis:[]}});
     await execute(tools,'parallel_research',{query:'Research',processor:'base',output_path:'.ensemble/tmp/run_test/report.md'});

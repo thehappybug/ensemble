@@ -2,6 +2,7 @@ import matter from 'gray-matter';
 import Handlebars from 'handlebars';
 import { z } from 'zod';
 import type { Node,PromptFM } from '../types.js';
+import { isReadOnlySlug } from '../integrations/composio/readonly.js';
 import { parseCron } from '../graph/cron.js';
 
 export const slugify=(value:unknown):string=>String(value??'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
@@ -24,7 +25,7 @@ export function parsePrompt(source:string,promptPath:string):{fm:PromptFM;body:s
   const parsed=matter(source); const warnings=Object.keys(parsed.data).filter(key=>!(key in frontmatterSchema.shape)).map(key=>`${promptPath}: unknown frontmatter key "${key}"`);
   const fm=frontmatterSchema.parse(parsed.data);
   if(!promptPath.endsWith('.action.md'))for(const tool of fm.tools.composio) {
-    if(tool.toUpperCase()===tool && !/^[A-Z0-9]+_(LIST|GET|FETCH|FIND|SEARCH|READ)_/.test(tool))throw new Error(`${promptPath}: Composio tool ${tool} is not read-only; use an action`);
+    if(tool.toUpperCase()===tool && !isReadOnlySlug(tool))throw new Error(`${promptPath}: Composio tool ${tool} is not read-only; use an action`);
   }
   if(promptPath.endsWith('.action.md')) {
     const stem=promptPath.slice(promptPath.lastIndexOf('/')+1).replace(/\.action\.md$/,'');
