@@ -138,6 +138,38 @@ describe('action plans and deterministic execution', () => {
     expect(f.backend.calls.at(-1)?.args.description).toBe('Draft draft-2');
   });
 
+  it('cannot bypass an uncertain write by replanning or renaming its step', async () => {
+    const f = await fixture(); let fail = true;
+    f.backend.onExecute = async slug => { if (slug === 'GMAIL_CREATE_EMAIL_DRAFT' && fail) { fail = false; throw new Error('Mock request outcome unknown'); } return undefined; };
+    const first = await f.service.approve(f.node.id);
+    expect(first.steps.at(-1)?.status).toBe('uncertain');
+    const previousHash = (await f.service.read(f.node.id)).sha256, callCount = f.backend.calls.length;
+    let review = await f.service.plan(f.node.id);
+    expect(review.sha256).not.toBe(previousHash);
+    review.plan.steps[1].id = 'renamed_draft';
+    review.plan.steps[2].args.description = 'Draft {{steps.renamed_draft.data.id}}';
+    review = await f.service.edit(f.node.id, review.plan);
+    await expect(f.service.approve(f.node.id)).rejects.toThrow('uncertain outcome');
+    expect(f.backend.calls).toHaveLength(callCount);
+    expect((await f.service.approve(f.node.id, { force: true })).status).toBe('executed');
+    const afterForce = f.backend.calls.length;
+    // A newer confirmed real success settles uncertainty. It does not make a
+    // newly reviewed plan idempotent with an older intentional execution.
+    await f.service.plan(f.node.id);
+    expect((await f.service.approve(f.node.id)).status).toBe('executed');
+    expect(f.backend.calls).toHaveLength(afterForce + 3);
+  });
+
+  it('checks cross-plan uncertainty again after dynamic references resolve', async () => {
+    const f = await fixture(); let fail = true;
+    f.backend.onExecute = async slug => { if (slug === 'LINEAR_CREATE_LINEAR_ISSUE' && fail) { fail = false; throw new Error('Mock ticket outcome unknown'); } return undefined; };
+    expect((await f.service.approve(f.node.id)).steps.at(-1)?.status).toBe('uncertain');
+    await f.service.plan(f.node.id);
+    const second = await f.service.approve(f.node.id);
+    expect(second.status).toBe('failed'); expect(second.error).toContain('uncertain outcome');
+    expect(f.backend.calls.filter(call => call.slug === 'LINEAR_CREATE_LINEAR_ISSUE')).toHaveLength(1);
+  });
+
   it('validates edits, regenerates Markdown, and preserves the edited plan until approval', async () => {
     const f = await fixture();
     const review = await f.service.read(f.node.id), edited = structuredClone(review.plan);

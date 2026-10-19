@@ -1,5 +1,7 @@
 # Coding-agent ICP workspace
 
+PDF export and the rendered deck PDF are deferred at the user’s request.
+
 This complete input workspace researches coding-agent companies for the fictional
 Acme API Tools. It ships without research results, action plans, receipts, or PDFs.
 The root repository README explains installation and credentials.
@@ -12,8 +14,9 @@ prospect's address for this demo. Keep secrets in the environment or an ignored
 
 Run commands from this directory using your installed `ensemble` binary. Inspect
 the graph with `ensemble graph --mermaid` or `ensemble dev`. Start with a
-separately approved live run using `--var row_limit=3`; ten rows are the full
-demo. A core dataset task plus one base direction task per company and the
+separately approved live run after setting `vars.row_limit: 3` in the YAML; ten
+rows are the full demo. Persist the smaller limit before starting the daemon:
+a one-off `--var row_limit=3` does not change its future defaults. A core dataset task plus one base direction task per company and the
 people searches incur Parallel charges; every research, synthesis, and librarian
 session also incurs model charges. Per-run `budget_usd` limits model cost, not
 the total workspace or Parallel cost. Check the root README's cost estimates

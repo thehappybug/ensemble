@@ -4,7 +4,7 @@ import type { Node, WorkspaceConfig } from '../types.js';
 import { canonical, fileHash, readJSON, sha, writeJSON } from '../util.js';
 import { assertSafePath } from '../workspace/paths.js';
 import { validateToolArgs, type ComposioBackend } from '../integrations/composio/backend.js';
-import { actionPaths, readPlan, simulatedToolSchema, validatePlan, type ActionPlan, type ActionStep } from './plan.js';
+import { actionPaths, readPlan, references, simulatedToolSchema, validatePlan, type ActionPlan, type ActionStep } from './plan.js';
 
 export interface StepReceipt { id: string; tool: string; status: 'running' | 'ok' | 'failed' | 'skipped' | 'uncertain'; resolved_args: Record<string, unknown>; args_sha256: string; data?: unknown; error?: string | null; log_id?: string; at: string; reason?: string }
 export interface ExecutionReceipt { id: string; approved_by: string; approved_at: string; plan_sha256: string; dry_run: boolean; steps: StepReceipt[]; status: 'executing' | 'executed' | 'failed'; error?: string; ended_at?: string }
@@ -67,6 +67,18 @@ export async function executeApprovedPlan(options: ExecuteOptions): Promise<Exec
   for (const step of plan.steps) demoSafety(options.config, step, step.args, dryRun);
   const receipt = await readJSON<ReceiptFile>(path.join(root, files.receipt), { executions: [] });
   if (!receipt || !Array.isArray(receipt.executions)) throw new Error('Invalid receipt history; refusing to overwrite it');
+  // Replanning changes timestamps/run IDs and therefore the plan checksum. An
+  // unresolved provider outcome still belongs to the same tool and payload,
+  // even if the new plan gives that step another name.
+  const payloadOutcomes = new Map<string, StepReceipt['status']>();
+  for (const previous of receipt.executions) if (!previous.dry_run) for (const step of previous.steps) {
+    if (['ok', 'running', 'uncertain'].includes(step.status)) payloadOutcomes.set(`${step.tool}:${step.args_sha256 ?? sha(canonical(step.resolved_args))}`, step.status);
+  }
+  const requireCertainPayload = (tool: string, argsHash: string) => {
+    const outcome = payloadOutcomes.get(`${tool}:${argsHash}`);
+    if (!dryRun && !options.force && outcome && ['running', 'uncertain'].includes(outcome)) throw new Error('A prior execution of this tool payload has an uncertain outcome; inspect provider state and use force only if safe');
+  };
+  for (const step of plan.steps) if (!references(step.args).length) requireCertainPayload(step.tool, sha(canonical(step.args)));
   const check = async () => {
     if (await fileHash(path.join(root, files.json)) !== planHash) throw new Error('Plan changed after approval; review and approve the new exact plan');
     await options.checkFresh?.();
@@ -89,10 +101,11 @@ export async function executeApprovedPlan(options: ExecuteOptions): Promise<Exec
     for (const step of plan.steps) {
       await check();
       const args = resolveReferences(step.args, results) as Record<string, unknown>;
+      const argsHash = sha(canonical(args));
+      requireCertainPayload(step.tool, argsHash);
       const schema = plan.simulated ? simulatedToolSchema(step.tool) : await backend.getToolSchema(step.tool);
       validateToolArgs(schema.inputSchema, args);
       demoSafety(options.config, step, args, dryRun);
-      const argsHash = sha(canonical(args));
       const prior = !options.force ? receipt.executions.filter(previous => previous.id !== execution.id && previous.plan_sha256 === planHash && previous.dry_run === dryRun).flatMap(previous => previous.steps).reverse().find(previous => previous.id === step.id && previous.tool === step.tool && previous.args_sha256 === argsHash && previous.status === 'ok') : undefined;
       if (prior) {
         execution.steps.push({ id: step.id, tool: step.tool, status: 'skipped', resolved_args: args, args_sha256: argsHash, data: prior.data, error: null, at: new Date().toISOString(), reason: 'already executed' });
