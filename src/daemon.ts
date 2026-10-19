@@ -16,6 +16,8 @@ import { WorkspaceGit } from './git.js';
 import { watchWorkspace } from './watcher.js';
 import { installSchedules } from './graph/cron.js';
 import { assertSafePath } from './workspace/paths.js';
+import {rebuildIndex} from './librarian/index.js';
+import {isManagedPath} from './workspace/paths.js';
 import { createApi } from './server/api.js';
 
 const execute=promisify(execFile);
@@ -72,6 +74,9 @@ export async function startDaemon(root:string,options:RuntimeOptions&{port?:numb
     runtime=await createRuntime(root,{...options,config,runner:options.runner??(options.simulate?new SimulationRunner():undefined)});
     runtime.scheduler.paused=!!options.paused;
     const current=runtime,app=createApi(current);
+    let libraryTimer:ReturnType<typeof setTimeout>|undefined,indexing:Promise<unknown>|undefined,librarianClosed=false;
+    const scheduleIndex=()=>{if(librarianClosed||!config.agents_md.enabled)return;if(libraryTimer)clearTimeout(libraryTimer);libraryTimer=setTimeout(()=>{if(librarianClosed)return;if(current.scheduler.running){scheduleIndex();return;}indexing=rebuildIndex(current,{noLlm:!!options.simulate||!config.agents_md.summaries}).catch(error=>current.bus.emit('librarian.error',{error:String(error)}));},5000);libraryTimer.unref();};
+    const stopLibrarian=current.bus.subscribe(event=>{if(event.type==='run.finished'||(event.type==='fs.changed'&&Array.isArray(event.data.paths)&&event.data.paths.some(p=>typeof p==='string'&&!isManagedPath(p))))scheduleIndex();});
     server=await new Promise<ReturnType<typeof serve>>((resolve,reject)=>{const listener=serve({fetch:app.fetch,hostname:'127.0.0.1',port:requestedPort},()=>resolve(listener));listener.once('error',reject);});
     const address=server.address();const port=address&&typeof address!=='string'?address.port:requestedPort;
     lock.port=port;await writeFile(lockPath(root),JSON.stringify(lock));
@@ -79,8 +84,8 @@ export async function startDaemon(root:string,options:RuntimeOptions&{port?:numb
     watcher=await watchWorkspace(root,config,async paths=>{try{if(paths.includes('ensemble.yaml'))Object.assign(config,await loadConfig(root));await current.refresh();current.bus.emit('fs.changed',{paths});automatic();}catch(error){current.bus.emit('daemon.error',{error:String(error)});}});
     schedules=installSchedules(current.scheduler,current.bus);
     let closed=false;
-    const close=async()=>{if(closed)return;closed=true;await watcher?.close();schedules?.close();await current.close();await new Promise<void>((resolve,reject)=>server!.close(error=>error?reject(error):resolve()));await releaseDaemonLock(root,lock);current.bus.emit('daemon.stopped');};
-    current.bus.emit('daemon.started',{port,simulated:!!options.simulate});automatic();
+    const close=async()=>{if(closed)return;closed=true;librarianClosed=true;if(libraryTimer)clearTimeout(libraryTimer);stopLibrarian();await indexing;await watcher?.close();schedules?.close();await current.close();await new Promise<void>((resolve,reject)=>server!.close(error=>error?reject(error):resolve()));await releaseDaemonLock(root,lock);current.bus.emit('daemon.stopped');};
+    current.bus.emit('daemon.started',{port,simulated:!!options.simulate});automatic();scheduleIndex();
     return {...current,app,server,port,close};
   }catch(error){await watcher?.close();schedules?.close();await runtime?.close();if(server)await new Promise<void>(resolve=>server!.close(()=>resolve()));await releaseDaemonLock(root,lock);throw error;}
 }

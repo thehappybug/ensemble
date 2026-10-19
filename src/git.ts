@@ -55,14 +55,9 @@ export class WorkspaceGit {
       const requested = this.selected(paths);
       // Git-ignored files, absent optional inputs and vanished untracked files
       // never become a force-add merely because they appear in frontmatter.
-      const selected: string[] = [];
-      for (const file of requested) {
-        const tracked = await this.git.raw(['ls-files', '--error-unmatch', '--', file]).then(() => true, () => false);
-        // check-ignore exits 1 without stderr for an ordinary unignored file;
-        // simple-git may resolve that case, so inspect stdout as well.
-        const ignored = await this.git.raw(['check-ignore', '--', file]).then(value => Boolean(value.trim()), () => false);
-        if (tracked || (!ignored && existsSync(path.join(this.root, file)))) selected.push(file);
-      }
+      const tracked=new Set((requested.length?await this.git.raw(['ls-files','-z','--',...requested]):'').split('\0').filter(Boolean));
+      const ignored=new Set((requested.length?await this.git.raw(['check-ignore','-z','--',...requested]).catch(()=> ''):'').split('\0').filter(Boolean));
+      const selected=requested.filter(file=>tracked.has(file)||(!ignored.has(file)&&existsSync(path.join(this.root,file))));
       const status = selected.length ? await this.git.raw(['status', '--porcelain=v1', '--untracked-files=all', '--', ...selected]) : '';
       if (!status.trim() && !allowEmpty) return this.head();
       if (selected.length) await this.git.raw(['add', '-A', '--', ...selected]);

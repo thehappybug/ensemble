@@ -5,6 +5,7 @@ import {execFile} from 'node:child_process';
 import {promisify} from 'node:util';
 import matter from 'gray-matter';
 import YAML from 'yaml';
+import {installWorkspaceSkill} from './skills.js';
 import {atomicWrite,exists} from '../util.js';
 import {assertSafePath,resolvePath} from './paths.js';
 const exec=promisify(execFile);
@@ -15,6 +16,9 @@ export async function initWorkspace(dir:string,example?:string){
  const ignoreFile=path.join(root,'.gitignore');const existing=await readFile(ignoreFile,'utf8').catch(()=> '');await atomicWrite(ignoreFile,existing+'\n.ensemble/\n.env\n.env.*\n!.env.example\nnode_modules/\nexports/*.tmp\n');
  await exec('git',['init'],{cwd:root});
  await atomicWrite(path.join(root,'AGENTS.md'),'# '+path.basename(root)+'\n\nThis is an Ensemble workspace. Prompts are files; action execution requires approval.\n');
+ await installWorkspaceSkill(root);
+ const {createRuntime}=await import('../daemon.js');const {rebuildIndex}=await import('../librarian/index.js');const {discoverFiles}=await import('./discover.js');
+ const runtime=await createRuntime(root);try{await rebuildIndex(runtime,{noLlm:true});await runtime.git.commitFiles(await discoverFiles(root,runtime.config),'chore(ensemble): initialize workspace');}finally{await runtime.close();}
  return root;
 }
 export async function newPrompt(root:string,target:string,options:{foreach?:string;fromDescription?:string}={}){
