@@ -1,0 +1,39 @@
+version: 1
+name: coding-agents-icp
+llm:
+  provider: cline
+  model: anthropic/claude-sonnet-4.6
+  summarizer_model: anthropic/claude-sonnet-4.6
+  max_iterations: 60
+scheduler:
+  concurrency: 3
+  debounce_ms: 1500
+  fanout_confirm_over: 12
+defaults:
+  timeout: 30m
+  budget_usd: 3.00
+parallel:
+  max_processor: core
+  cache: true
+composio:
+  backend: auto
+  user_id: local-user
+  dry_run: false
+git:
+  auto_commit: true
+  author: Ensemble <ensemble@localhost>
+agents_md:
+  enabled: true
+  claude_md_shim: true
+  summaries: true
+ui:
+  port: 4567
+vars:
+  my_company: Acme API Tools
+  # REQUIRED before a real approval: replace with your own connected Gmail address.
+  demo_recipient: you@example.com
+  # Use --var row_limit=3 for a smaller, separately approved live research run.
+  row_limit: 10
+  linear_team_key: GTM
+ignore:
+  - scratch/**

@@ -1,0 +1,6 @@
+.ensemble/
+.env
+.env.*
+!.env.example
+node_modules/
+exports/*.tmp
