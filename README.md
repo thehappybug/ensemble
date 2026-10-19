@@ -11,7 +11,8 @@ Composio actions wait for approval of an exact, reviewable plan.
 
 *Actual browser screenshot. Research and action receipts in this preview are explicitly simulated.*
 
-[Five-slide deck PDF](deck/deck.pdf) · [Marp source](deck/deck.md) ·
+[Public repository](https://github.com/thehappybug/ensemble) ·
+[Five-slide deck PDF](https://github.com/thehappybug/ensemble/blob/main/deck/deck.pdf) · [Marp source](deck/deck.md) ·
 [Two-minute demo script](docs/demo-script.md) · [Technical specification](SPEC.md)
 
 ## Install and run
@@ -22,9 +23,11 @@ key, and connected Gmail/Linear accounts through the selected Composio backend.
 Application PDF export remains deferred. The five-slide deck is available as a
 [PDF](deck/deck.pdf); regenerate it with `pnpm deck` using an installed Chrome or Chromium browser.
 
-After cloning this repository:
+From a fresh checkout:
 
 ```bash
+git clone https://github.com/thehappybug/ensemble.git
+cd ensemble
 pnpm install
 pnpm build
 export PATH="$PWD/bin:$PATH"
@@ -36,6 +39,9 @@ cd ../ensemble-demo
 
 The absolute `bin/` entry remains on PATH after changing directories. Commands
 find the nearest parent `ensemble.yaml`, so they also work in workspace subfolders.
+Keep the committed `pnpm-workspace.yaml`: pnpm 11 uses its `allowBuilds` entries
+for the `esbuild` and `protobufjs` dependency scripts. This avoids a fresh install
+blocking required build scripts; no global pnpm approval changes are needed.
 
 Edit the new workspace's `.env` and `ensemble.yaml` before starting real work:
 
@@ -307,7 +313,7 @@ librarian charges even when no new web research is needed.
 | Parallel research | Real pinned SDK adapters, polling, cache, processor caps, citations and sidecars; tested with injected SDK/fetch responses. A live fast-search smoke passed. The full dataset/research pipeline has not been pre-run. |
 | Composio actions | Real SDK/CLI adapters and deterministic executor, tested with recording/mock backends. A user-approved live Cline plan created three own-address Gmail drafts and one Linear issue; provider readback and idempotent replay passed. |
 | `dev --simulate` | Explicit synthetic agent/research outputs and simulated receipts. Every preview is labeled; this is never the production default. |
-| UI | Actual React components, rendered-content/security tests, static-serving/API tests, and a native SVG graph. Eight Chromium scenarios passed, including editor-driven cascades, fan-out, drawers/history, simulated approvals, file links, and activity. The screenshot uses synthetic research. |
+| UI | Actual React components, rendered-content/security tests, static-serving/API tests, and a native SVG graph. Fourteen Chromium scenarios passed, including editor-driven cascades, fan-out, drawers/history, simulated approvals, file links, and activity. The screenshot uses synthetic research. |
 | PDF and deck | Application PDF export is deferred. The five-slide Marp deck PDF is rendered and visually checked. |
 
 Core pins are `@cline/sdk@0.0.95`, `parallel-web@1.3.5`, and
@@ -319,15 +325,18 @@ at the top level. See [spike outcomes](docs/spikes.md),
 [restricted-environment details](docs/environment-offline.md).
 
 Initial sandbox restrictions were lifted for final testing. Normal pnpm installation,
-production build, TypeScript, 123 tests, browser interaction and live integration
+production build, TypeScript, 129 tests, browser interaction and live integration
 smokes now pass. See [final verification](docs/live-verification.md). The full
 10-company live research workspace remains a separate pre-run before recording.
 
 Before recording, run the live Cline/Parallel checks, open the daemon in a real
 browser and explicitly approve the demo drafts/ticket in your
 own connected accounts. The [demo script](docs/demo-script.md) includes the
-preflight and disclosure. Publishing the repository and recording/uploading the
-video are owner actions; no published submission URLs are claimed here.
+preflight and disclosure. The [repository](https://github.com/thehappybug/ensemble)
+and [deck PDF](https://github.com/thehappybug/ensemble/blob/main/deck/deck.pdf)
+are public. Recording/uploading the video remains the owner's submission step.
+The full research pre-run has not been completed and requires approval of its
+costs; the successful integration smokes do not stand in for that pre-run.
 
 ## Development
 

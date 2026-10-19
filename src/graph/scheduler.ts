@@ -34,6 +34,7 @@ export class Scheduler {
   this.bus.emit('run.started',{runId,node:node.id});await this.store.save();
   try{
    await this.beforeRun?.(node,meta);await atomicWrite(path.join(dir,'prompt.md'),node.body);
+   controller.signal.throwIfAborted();
    const outcome=await this.runner.run(node,{root:this.root,config:this.config,runId,signal:controller.signal,noCache:options.noCache,previous,emit});
    if(controller.signal.aborted)throw new Error('interrupted');
    const outputs=Object.fromEntries(await Promise.all(requiredOutputs(node).map(async p=>[p,await fileHash(path.join(this.root,p))])));if(Object.values(outputs).includes('missing'))throw new Error('Runner did not produce all required outputs');

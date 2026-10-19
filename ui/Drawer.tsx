@@ -16,6 +16,10 @@ interface DetailedNode extends NodeDetail {
 const message = (error: unknown) => error instanceof Error ? error.message : String(error);
 const price = (value?: number) => `$${(value ?? 0).toFixed(4)}`;
 
+export function promptRunRequest(node: GraphNode, replaceEditedOutputs = false): { targets: string[]; failed?: true; force?: true } {
+  return { targets: [node.id], ...(node.status === 'failed' ? { failed: true as const } : {}), ...(node.status === 'modified' && replaceEditedOutputs ? { force: true as const } : {}) };
+}
+
 function StreamEvent({ event }: { event: LogEvent }) {
   const payload = event.type === 'cline.event' && event.event && typeof event.event === 'object' ? event.event as Record<string, unknown> : event;
   const type = String(payload.type ?? event.type ?? 'event');
@@ -40,6 +44,7 @@ export function NodeDrawer({ node, onClose, onRefresh, onFile }: Props) {
   const streamEnd = useRef<HTMLDivElement>(null);
   const id = node?.id;
   useEffect(() => { setDetail(null); setTab('Prompt'); setOutput(''); setFileContent(''); setDiff(null); setError(''); setSelectedRun(null); setForce(false); }, [id]);
+  useEffect(() => { if (node?.status !== 'modified') setForce(false); }, [id, node?.status]);
   useEffect(() => {
     if (!id) return;
     const controller = new AbortController();
@@ -51,7 +56,7 @@ export function NodeDrawer({ node, onClose, onRefresh, onFile }: Props) {
   const activeRunId = selectedRun ?? current?.lastRun?.runId;
   const runIsActive = !!activeRunId && activeRunId === node?.lastRun?.runId && node?.lastRun?.status === 'running';
   useEffect(() => {
-    if (!activeRunId) { setLogs([]); return; }
+    if (!activeRunId || tab !== 'Live') { setLogs([]); return; }
     const controller = new AbortController();
     const load = async () => {
       try {
@@ -68,25 +73,25 @@ export function NodeDrawer({ node, onClose, onRefresh, onFile }: Props) {
     void load();
     const timer = runIsActive ? setInterval(() => void load(), 1000) : undefined;
     return () => { controller.abort(); if (timer) clearInterval(timer); };
-  }, [activeRunId, runIsActive, node?.status]);
+  }, [activeRunId, runIsActive, node?.status, tab]);
   useEffect(() => {
     if (!current) return;
     if (!current.outputs.includes(output)) setOutput(current.outputs.find(path => !path.endsWith('.receipt.json')) ?? current.outputs[0] ?? '');
   }, [id, current?.outputs.join('|')]);
   useEffect(() => {
-    if (!output || !id) return;
+    if (!output || !id || tab !== 'Outputs') return;
     const controller = new AbortController();
     setFileContent(''); setDiff(null); setOutputError('');
     api<{ content: string }>(`/api/files?path=${encodeURIComponent(output)}`, { signal: controller.signal }).then(file => setFileContent(file.content)).catch(error => { if (!controller.signal.aborted) setOutputError(message(error)); });
     api<Diff>(`${nodePath(id, '/diff')}?path=${encodeURIComponent(output)}`, { signal: controller.signal }).then(setDiff).catch(() => {});
     return () => controller.abort();
-  }, [id, output, node?.lastRun?.runId, node?.status, revision]);
+  }, [id, output, node?.lastRun?.runId, node?.status, revision, tab]);
 
   useEffect(() => { if (tab === 'Live' && follow) streamEnd.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }, [logs.length, tab, follow]);
 
   if (!node || !current) return null;
   const act = async (callback: () => Promise<unknown>) => { setBusy(true); setError(''); try { await callback(); setRevision(value => value + 1); onRefresh(); } catch (error) { setError(message(error)); } finally { setBusy(false); } };
-  const run = () => void act(() => node.kind === 'action' ? api(`/api/actions/${encodeURIComponent(node.id)}/plan`, { method: 'POST', body: {} }) : api('/api/run', { method: 'POST', body: { targets: [node.id], ...(force ? { force: true } : {}) } }));
+  const run = () => void act(() => node.kind === 'action' ? api(`/api/actions/${encodeURIComponent(node.id)}/plan`, { method: 'POST', body: {} }) : api('/api/run', { method: 'POST', body: promptRunRequest(node, force) }));
   const isRunning = node.status === 'running' || node.lastRun?.status === 'running';
   const runs = selectedDetail?.runs ?? [];
   const baseline = runs.find(run => run.status === 'completed')?.inputs ?? current.lastRun?.inputs ?? {};

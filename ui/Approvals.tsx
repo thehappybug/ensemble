@@ -87,7 +87,7 @@ function ActionReviewPanel({ node, forcedSimulation, onRefresh }: { node: GraphN
     const controller = new AbortController();
     api<ActionReview>(actionPath(node.id), { signal: controller.signal }).then(value => { setReview(value); setError(''); }).catch(error => { if (!controller.signal.aborted) setError(errorMessage(error)); });
     return () => controller.abort();
-  }, [node.id, node.fingerprint, node.lastRun?.runId, node.status, node.approval?.execution_id]);
+  }, [node.id, node.fingerprint, node.lastRun?.runId, node.status, node.approval?.execution_id, editing]);
   const perform = async (callback: () => Promise<unknown>) => { setBusy(true); setError(''); try { await callback(); onRefresh(); } catch (error) { setError(errorMessage(error)); } finally { setBusy(false); } };
   const approve = (dryRun: boolean) => { if (!review || editing) return; void perform(async () => { await api(actionPath(node.id, '/approve'), { method: 'POST', body: { dryRun, expectedPlanHash: review.sha256 } }); setReview(await api<ActionReview>(actionPath(node.id))); }); };
   const save = () => { if (!review) return; void perform(async () => { const plan: unknown = JSON.parse(draft); const saved = await api<ActionReview>(actionPath(node.id, '/plan'), { method: 'PUT', body: { plan, expectedPlanHash: review.sha256 } }); setReview(saved); setEditing(false); }); };

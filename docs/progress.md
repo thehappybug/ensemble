@@ -37,3 +37,7 @@ Packaged the CLI entry point, five-slide Marp source, fresh-workspace instructio
 ## Final connected checks and deck
 
 After permissions were enabled, normal pnpm installation/lockfile, production build, strict TypeScript and all 123 tests passed. Eight real Chromium UI scenarios passed without browser errors. Live API-key Cline write/completion, Parallel fast search, Cline action planning, three user-approved Gmail drafts and one Linear issue, provider readback and idempotent replay all passed. Stored OAuth failed and the API-key fallback is verified. Deck PDF rendered with five pages and was visually reviewed; application PDF export remains deferred. The full research workspace has not been pre-run. See live-verification.md for scope and the pinned SDK's bounded CLI exit delay.
+
+## Completion audit and private live setup
+
+Fixed clean-clone pnpm11 build approvals and removed the obsolete offline npmrc. Added UI retry/overwrite/manual-count/interactive-control fixes and abort safety checks. Expanded Chromium coverage to14 scenarios, including exactplan edit/reject/replan, manual run, abort/retry, output edits and XYFlow. Fresh frozen install/build/init/doctor/browser and minimumNode22.22.3 checks pass. The original recordingworkspace is preserved and healthy. Configured a separate real workspace, paused on4568. Live librarian summaries/cache and actual Linear readonly bridge passed. Full paid research remains pending spend approval; application PDF export stays deferred.

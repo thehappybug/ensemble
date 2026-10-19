@@ -25,6 +25,12 @@ Use read-only team/user lookup tools to resolve Linear team key
 {{linear_team_key}} in the operator's own connected workspace. Follow team.md
 for the owner; omit assignee if it cannot be verified. If the required team
 cannot be resolved, report the blocker rather than picking another team.
+Use LINEAR_LIST_LINEAR_TEAMS and, when owner resolution is needed,
+LINEAR_LIST_LINEAR_USERS. Their first/after inputs support pagination: continue
+only when page_info.hasNextPage is true, using page_info.endCursor as after.
+Inspect the populated teams/users collection if the response also contains
+empty items or nested data wrappers. Match the configured team key against the
+returned identifier/key; never substitute the first team in the response.
 
 Propose exactly three GMAIL_CREATE_EMAIL_DRAFT write steps, one for each approved
 email in sequence.md. Set recipient_email to {{demo_recipient}} in every step,

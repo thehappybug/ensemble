@@ -6,7 +6,8 @@ import { frontmatterSchema } from '../src/workspace/frontmatter.js';
 import type { GraphNode } from '../ui/types.js';
 import { Markdown, markdownFileTarget } from '../ui/Markdown.js';
 import { PlanCards, ReceiptView, ReviewControls, approvalBlockReason, pendingApprovalNodes, receiptLinks } from '../ui/Approvals.js';
-import { UnifiedDiff } from '../ui/Drawer.js';
+import { UnifiedDiff, promptRunRequest } from '../ui/Drawer.js';
+import { automaticStaleNodes } from '../ui/state.js';
 
 const node: GraphNode = {
   id: 'outreach', path: 'outreach.action.md', kind: 'action', status: 'awaiting-approval',
@@ -25,6 +26,18 @@ const receipt: ExecutionReceipt = {
 };
 
 describe('UI review and document safety', () => {
+  it('retries failed prompts and confines overwrite permission to the currently edited node', () => {
+    expect(promptRunRequest({ ...node, kind: 'prompt', status: 'failed' })).toEqual({ targets: ['outreach'], failed: true });
+    expect(promptRunRequest({ ...node, kind: 'prompt', status: 'modified' }, true)).toEqual({ targets: ['outreach'], force: true });
+    expect(promptRunRequest({ ...node, kind: 'prompt', status: 'fresh' }, true)).toEqual({ targets: ['outreach'] });
+    expect(promptRunRequest({ ...node, kind: 'prompt', status: 'modified' }, false)).toEqual({ targets: ['outreach'] });
+  });
+  it('keeps manual prompts and actions out of the run-all-stale toolbar action', () => {
+    const auto = { ...node, id: 'auto', kind: 'prompt' as const, status: 'stale' as const };
+    const manual = { ...auto, id: 'manual', fm: { ...auto.fm, mode: 'manual' as const } };
+    const action = { ...node, id: 'manual-action', status: 'stale' as const, fm: { ...node.fm, plan: 'manual' as const } };
+    expect(automaticStaleNodes([auto, manual, action])).toEqual([auto]);
+  });
   it('renders full email content as escaped text, not active HTML', () => {
     const html = renderToStaticMarkup(<PlanCards plan={plan} />);
     expect(html).toContain('operator@gmail.com');

@@ -2,12 +2,22 @@
 
 Record a real workspace from `examples/coding-agents-icp/`, or clearly disclose
 `--simulate` throughout. The repository's graph image uses synthetic data; it is
-an actual component rendering, not evidence of a live integration run.
+an actual Chromium screenshot, not evidence of a full live research pre-run.
+
+For the prepared cost-free recording workspace, open `../ensemble-recording` in
+your editor and run `ensemble dev --simulate` from that directory. Open the
+printed local URL, show the SIMULATED badge, then demonstrate the ICP edit,
+new-row cascade, approval, and history. Use clearly synthetic company data and
+keep the simulation disclosure visible. No reset or deletion is needed; this
+preview is separate from the live integration smokes and pending paid pre-run.
 
 ## Before recording
 
 1. Follow the root [README](../README.md) on a machine with network, localhost
-   sockets, and browser process permissions. Run `pnpm install` and `pnpm build`. Final checks passed in Chromium, with real Cline/Parallel smokes and an approved
+   sockets, and browser process permissions. Run `pnpm install` and `pnpm build`.
+   Keep the committed `pnpm-workspace.yaml`, which allows the required esbuild
+   and protobufjs dependency builds under pnpm 11. Final checks passed in
+   Chromium, with real Cline/Parallel smokes and an approved
    Gmail/Linear test. The full research workspace still needs a pre-run.
 2. Initialize a separate real demo workspace. Put keys in its ignored `.env`.
    Prefer `CLINE_API_KEY` until a live OAuth smoke verifies stored-login reuse.
@@ -88,7 +98,12 @@ claim that Gmail/Linear writes were verified.
 
 ## Finish the submission
 
-The owner records/uploads the video and publishes the repository/deck URLs.
-Repository creation or pushing requires the owner's approval. The included
-[deck source](../deck/deck.md) and [rendered PDF](../deck/deck.pdf) are local
-submission assets; this document does not claim that any public URLs have been created.
+Published assets are ready:
+
+- [Public repository](https://github.com/thehappybug/ensemble)
+- [Five-slide deck PDF](https://github.com/thehappybug/ensemble/blob/main/deck/deck.pdf)
+- [Deck source](../deck/deck.md)
+
+The owner still records/uploads the video. The full paid research pre-run has
+not been completed; obtain approval for its cost before starting it. A simulated
+recording can proceed with the disclosure above.

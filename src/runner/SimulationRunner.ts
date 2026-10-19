@@ -1,4 +1,5 @@
 import path from 'node:path';
+import {setTimeout as delay} from 'node:timers/promises';
 import type {Node} from '../types.js';
 import type {Runner,RunContext} from './Runner.js';
 import {atomicWrite,requiredOutputs} from '../util.js';
@@ -6,8 +7,10 @@ import {stringifyCSV} from '../workspace/csv.js';
 /** Explicit, cost-free preview. Production runs always use ClineRunner. */
 export class SimulationRunner implements Runner {
  async run(node:Node,ctx:RunContext){
+  ctx.signal.throwIfAborted();
   ctx.emit({type:'simulation',message:'SIMULATED agent output — no model, research or Composio call'});
-  await new Promise<void>((resolve,reject)=>{const timer=setTimeout(resolve,80);ctx.signal.addEventListener('abort',()=>{clearTimeout(timer);reject(new Error('interrupted'));},{once:true});});
+  await delay(80,undefined,{signal:ctx.signal});
+  ctx.signal.throwIfAborted();
   const summary='SIMULATED: '+(node.fm.description??node.id);
   if(node.kind==='action'){
    const recipient=String(ctx.config.vars.demo_recipient??'you@example.com');
