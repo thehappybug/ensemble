@@ -28,3 +28,7 @@ The user's existing ../ensemble-recording daemon remains on port4567, with 34 si
 ## APIMatic workspace personalization
 
 Both private workspaces now use Mehdi at APIMatic selling SDK generation to API providers. Company context cites official SDK/Generate/CLI documentation; ICP qualifies API-provider needs and decision owners without assuming SDK gaps. Outreach uses a three-email discovery sequence and safe own-address routing. The recording workspace regenerated34 healthy steps with fictional API-provider rows and APIMatic preview emails. Existing instance keys and git history were preserved. Its approval cards and the real paused workspace were checked in Chromium. No additional external writes or full paid research were performed.
+
+## Live screenshot capture
+
+The operator completed a real three-company API-provider run before screenshot capture. Read-only observation found Resend, Clerk and WorkOS,12fresh nodes and one action awaiting approval. The dataset CSV/citation sidecar and generated reports/sequence exist without simulation labels. Seven actual Chromium screenshots are published in docs/assets/live with private routing values redacted in the browser only. Capture blocks all non-GET API requests; it did not run research or execute the pending action. This extends the earlier smoke-only evidence to the three-company pipeline, while the full ten-company run and FindAll remain unverified live.

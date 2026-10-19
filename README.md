@@ -7,13 +7,29 @@ fans research out across a list, keeps AGENTS.md current, and records each run i
 git. Cline SDK sessions do the work, Parallel supplies cited research, and
 Composio actions wait for approval of an exact, reviewable plan.
 
-![Ensemble running in Chromium with simulated research](docs/assets/browser-graph.png)
+![Live Ensemble workspace: research dependencies and an action awaiting approval](docs/assets/live/overview.png)
 
-*Actual browser screenshot. Research and action receipts in this preview are explicitly simulated.*
+*Actual Chromium capture of a non-simulated, three-company APIMatic outreach
+workspace. Private email addresses and account identifiers are redacted in the
+screenshots. [See all seven screenshots](docs/screenshots.md).*
 
 [Public repository](https://github.com/thehappybug/ensemble) ·
 [Five-slide deck PDF](https://github.com/thehappybug/ensemble/blob/main/deck/deck.pdf) · [Marp source](deck/deck.md) ·
 [Two-minute demo script](docs/demo-script.md) · [Technical specification](SPEC.md)
+
+## See the workspace
+
+Open a node to inspect its generated report beside the prompt, inputs, logs and
+git history. Research stays in ordinary files with source citations.
+
+![Generated prospect qualification report in the live node drawer](docs/assets/live/report.png)
+
+The approval inbox shows complete email drafts and a Linear ticket. Editing a
+plan does not execute it; approval applies to the exact reviewed plan.
+
+![Live approval inbox with the proposed APIMatic outreach drafts](docs/assets/live/approvals.png)
+
+[Explore fan-out, approval controls, activity and the file browser →](docs/screenshots.md)
 
 ## Install and run
 
@@ -313,10 +329,10 @@ librarian charges even when no new web research is needed.
 | --- | --- |
 | Dependency graph, fan-out, watcher, cron, git, librarian, approvals | Implemented and tested with real local files/git. Native CSV, watcher, five-field cron, and SVG graph implementations are real local code. |
 | Cline agent sessions | Real `ClineCore` with guarded tools, tested against a mock OpenAI-compatible server. Live API-key doctor and guarded file-write/completion sessions passed; stored OAuth failed and uses the API-key fallback. |
-| Parallel research | Real pinned SDK adapters, polling, cache, processor caps, citations and sidecars; tested with injected SDK/fetch responses. A live fast-search smoke passed. The full dataset/research pipeline has not been pre-run. |
+| Parallel research | Real pinned SDK adapters, polling, cache, processor caps, citations and sidecars; tested with injected SDK/fetch responses. Live fast search and a three-company dataset/research pipeline passed. The complete ten-company configuration and FindAll have not been run live. |
 | Composio actions | Real SDK/CLI adapters and deterministic executor, tested with recording/mock backends. A user-approved live Cline plan created three own-address Gmail drafts and one Linear issue; provider readback and idempotent replay passed. |
 | `dev --simulate` | Explicit synthetic agent/research outputs and simulated receipts. Every preview is labeled; this is never the production default. |
-| UI | Actual React components, rendered-content/security tests, static-serving/API tests, and a native SVG graph. Fourteen Chromium scenarios passed, including editor-driven cascades, fan-out, drawers/history, simulated approvals, file links, and activity. The screenshot uses synthetic research. |
+| UI | Actual React components, rendered-content/security tests, static-serving/API tests, and a native SVG graph. Fourteen Chromium scenarios passed, including editor-driven cascades, fan-out, drawers/history, simulated approvals, file links, and activity. The README screenshots show a real three-company workspace; earlier synthetic preview captures remain labeled separately. |
 | PDF and deck | Application PDF export is deferred. The five-slide Marp deck PDF is rendered and visually checked. |
 
 Core pins are `@cline/sdk@0.0.95`, `parallel-web@1.3.5`, and
@@ -338,8 +354,8 @@ own connected accounts. The [demo script](docs/demo-script.md) includes the
 preflight and disclosure. The [repository](https://github.com/thehappybug/ensemble)
 and [deck PDF](https://github.com/thehappybug/ensemble/blob/main/deck/deck.pdf)
 are public. Recording/uploading the video remains the owner's submission step.
-The full research pre-run has not been completed and requires approval of its
-costs; the successful integration smokes do not stand in for that pre-run.
+A three-company live research run is complete and shown above. A full ten-company
+pre-run still requires approval of its costs.
 
 ## Development
 

@@ -45,3 +45,7 @@ Fixed clean-clone pnpm11 build approvals and removed the obsolete offline npmrc.
 ## APIMatic recording/live context
 
 Added config-driven simulated company rows and shared sequence/plan email text, keeping explicit simulation labels and zero external calls.131 tests pass. Tailored the two private workspaces to APIMatic SDK generation sales to API providers; the recording graph has34 healthy steps and three branded draft cards, while the real workspace stays paused. Removed remaining deferred-PDF promises from the public example and authoring skill.
+
+## Public live screenshots
+
+Captured the actual non-simulated, completed three-company workspace: overview, expandedfan-out, generatedreport, approvalcards/controls, activity and context. Added a README visualtour, fullgallery and reproducible read-only capture script/metadata. Redacted emails/UUIDs/localpaths in the browser without changing plans/files. Improved approvalcardcontrast, collapsible longplanner notes and Markdown ticketdescriptions for readability. Productionbuild, strictTS, existingUI tests and actualcapture pass; no external action was executed.

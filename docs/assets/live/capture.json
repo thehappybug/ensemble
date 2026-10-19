@@ -1,0 +1,47 @@
+{
+  "capturedAt": "2026-10-19T23:37:25.234Z",
+  "mode": "live",
+  "viewport": {
+    "width": 1720,
+    "height": 1120
+  },
+  "companies": [
+    "Resend",
+    "Clerk",
+    "WorkOS"
+  ],
+  "nodeCount": 13,
+  "approvalState": "awaiting-approval",
+  "redactions": "Email addresses, UUID identifiers and local home-directory paths were replaced in the browser DOM for public screenshots only. Workspace files and plans were unchanged.",
+  "readOnly": true,
+  "screenshots": [
+    {
+      "file": "overview.png",
+      "label": "Completed live dependency graph with an action awaiting approval"
+    },
+    {
+      "file": "fan-out.png",
+      "label": "Expanded live company instances and their independent dependencies"
+    },
+    {
+      "file": "report.png",
+      "label": "Generated prospect qualification report in the node output drawer"
+    },
+    {
+      "file": "approvals.png",
+      "label": "Exact live plan with readable draft recipients, subjects and bodies"
+    },
+    {
+      "file": "approval-controls.png",
+      "label": "Linear ticket and explicit approval, dry-run, edit and reject controls"
+    },
+    {
+      "file": "activity.png",
+      "label": "Actual completed runs, summaries and per-run git commit links"
+    },
+    {
+      "file": "context.png",
+      "label": "Workspace file browser with the APIMatic product context"
+    }
+  ]
+}
