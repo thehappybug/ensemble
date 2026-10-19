@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.ensemble/
+.ensemble-git/
+.env
+.env.*
+!.env.example
+exports/*.tmp
+coverage/
+*.tsbuildinfo
