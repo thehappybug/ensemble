@@ -84,7 +84,10 @@ For a cost-free preview, initialize a **separate** workspace and run
 `ensemble dev --simulate`. This explicitly selects synthetic agent outputs and
 simulated action receipts; it makes no model, Parallel, or Composio calls. Keep
 that workspace separate from real research so simulated outputs cannot be
-mistaken for live results. No credentials are required for preview mode.
+mistaken for live results. No credentials are required for preview mode. Customize preview text with `vars.sender_name`, `my_company`, `my_product`,
+`product_pitch`, and `target_market`. Optional `vars.preview_companies` accepts
+rows with the dataset's six columns; those rows and all preview receipts remain
+explicitly simulated.
 
 ## Composio account selection
 
@@ -325,7 +328,7 @@ at the top level. See [spike outcomes](docs/spikes.md),
 [restricted-environment details](docs/environment-offline.md).
 
 Initial sandbox restrictions were lifted for final testing. Normal pnpm installation,
-production build, TypeScript, 129 tests, browser interaction and live integration
+production build, TypeScript, 131 tests, browser interaction and live integration
 smokes now pass. See [final verification](docs/live-verification.md). The full
 10-company live research workspace remains a separate pre-run before recording.
 

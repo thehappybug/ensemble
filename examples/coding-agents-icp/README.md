@@ -1,6 +1,7 @@
 # Coding-agent ICP workspace
 
-PDF export and the rendered deck PDF are deferred at the user’s request.
+Application PDF export is deferred. The [rendered presentation deck](../../deck/deck.pdf)
+is available.
 
 This complete input workspace researches coding-agent companies for the fictional
 Acme API Tools. It ships without research results, action plans, receipts, or PDFs.

@@ -25,8 +25,9 @@ the environment, never in prompt files or `ensemble.yaml`.
 
 Frontmatter requires a nonempty `outputs` list for prompts. Common optional
 fields are `description`, `inputs`, `mode: auto|manual`, `tools`, `vars`, `model`,
-`timeout: 20m`, `budget_usd: 1`, `parallel.max_processor`, `incremental: true`,
-and `export: [pdf]`. `mode` defaults to auto. `schedule` is a cron expression;
+`timeout: 20m`, `budget_usd: 1`, `parallel.max_processor`, and `incremental: true`.
+`export: [pdf]` is reserved metadata; application PDF rendering is deferred.
+`mode` defaults to auto. `schedule` is a cron expression;
 it marks a prompt stale but still respects manual mode. Tools default to
 Parallel search/extract; use `parallel: []` for synthesis. Shell is opt-in and
 guarded. AGENTS.md and CLAUDE.md are maintained context, not prompt inputs.
@@ -93,11 +94,10 @@ tools:
   parallel: []
   composio: []
   shell: false
-export: [pdf]
 ---
 Rank the researched companies using only the declared evidence and current ICP.
 Write research/ranking.md with a ranked table, citations, and confidence. Label
-missing evidence. Ensemble creates the PDF export. Call ensemble_complete.
+missing evidence. Write only the declared markdown output. Call ensemble_complete.
 ```
 
 Fan-out expands CSV rows, a JSON array (or object with one array field), or a

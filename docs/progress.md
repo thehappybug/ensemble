@@ -41,3 +41,7 @@ After permissions were enabled, normal pnpm installation/lockfile, production bu
 ## Completion audit and private live setup
 
 Fixed clean-clone pnpm11 build approvals and removed the obsolete offline npmrc. Added UI retry/overwrite/manual-count/interactive-control fixes and abort safety checks. Expanded Chromium coverage to14 scenarios, including exactplan edit/reject/replan, manual run, abort/retry, output edits and XYFlow. Fresh frozen install/build/init/doctor/browser and minimumNode22.22.3 checks pass. The original recordingworkspace is preserved and healthy. Configured a separate real workspace, paused on4568. Live librarian summaries/cache and actual Linear readonly bridge passed. Full paid research remains pending spend approval; application PDF export stays deferred.
+
+## APIMatic recording/live context
+
+Added config-driven simulated company rows and shared sequence/plan email text, keeping explicit simulation labels and zero external calls.131 tests pass. Tailored the two private workspaces to APIMatic SDK generation sales to API providers; the recording graph has34 healthy steps and three branded draft cards, while the real workspace stays paused. Removed remaining deferred-PDF promises from the public example and authoring skill.
