@@ -3,6 +3,7 @@ import type { ActionPlan, ActionStep } from '../src/actions/plan.js';
 import type { ExecutionReceipt, ReceiptFile } from '../src/actions/execute.js';
 import type { GraphData, GraphNode } from './types.js';
 import { api } from './api.js';
+import { Markdown } from './Markdown.js';
 import './components.css';
 
 interface ActionReview { node: GraphNode; plan: ActionPlan; sha256: string; receipt: ReceiptFile }
@@ -37,8 +38,8 @@ export function receiptLinks(data: unknown): { label: string; href: string }[] {
   return [...links].map(([href, label]) => ({ label, href }));
 }
 
-function Field({ label, value }: { label: string; value: unknown }) {
-  return <div className="review-field"><span className="field-label">{label}</span><div className="preserve-lines">{typeof value === 'string' ? value : JSON.stringify(value, null, 2)}</div></div>;
+function Field({ label, value, markdown = false }: { label: string; value: unknown; markdown?: boolean }) {
+  return <div className="review-field"><span className="field-label">{label}</span>{markdown && typeof value === 'string' ? <Markdown content={value} /> : <div className="preserve-lines">{typeof value === 'string' ? value : JSON.stringify(value, null, 2)}</div>}</div>;
 }
 function StepCard({ step }: { step: ActionStep }) {
   if (step.tool === 'GMAIL_CREATE_EMAIL_DRAFT') return <article className="email-card">
@@ -53,13 +54,13 @@ function StepCard({ step }: { step: ActionStep }) {
   if (step.tool === 'LINEAR_CREATE_LINEAR_ISSUE') return <article className="ticket-card">
     <div className="card-kicker">Linear issue · {step.id}</div>
     <Field label="Title" value={step.args.title} />
-    {Object.entries(step.args).filter(([key]) => key !== 'title').map(([key, value]) => <Field key={key} label={key.replaceAll('_', ' ')} value={value} />)}
+    {Object.entries(step.args).filter(([key]) => key !== 'title').map(([key, value]) => <Field key={key} label={key.replaceAll('_', ' ')} value={value} markdown={key === 'description'} />)}
     <p className="muted">{step.why}</p>
   </article>;
   return <article className="card"><div className="card-kicker">{step.readonly ? 'Read-only lookup' : 'Action'} · {step.id}</div><strong>{step.tool}</strong><pre>{JSON.stringify(step.args, null, 2)}</pre><p className="muted">{step.why}</p></article>;
 }
 export function PlanCards({ plan }: { plan: ActionPlan }) {
-  return <div className="approval-plan">{plan.simulated && <div className="notice notice-simulated">SIMULATED plan · all execution stays simulated.</div>}<p>{plan.summary}</p>{plan.steps.map(step => <StepCard key={step.id} step={step} />)}</div>;
+  return <div className="approval-plan">{plan.simulated && <div className="notice notice-simulated">SIMULATED plan · all execution stays simulated.</div>}<>{plan.summary.length > 500 ? <details className="plan-notes"><summary>Planner notes and preflight checks</summary><Markdown content={plan.summary} /></details> : <p>{plan.summary}</p>}</>{plan.steps.map(step => <StepCard key={step.id} step={step} />)}</div>;
 }
 
 export function ReceiptView({ execution }: { execution: ExecutionReceipt }) {
