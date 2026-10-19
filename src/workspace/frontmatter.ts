@@ -2,6 +2,7 @@ import matter from 'gray-matter';
 import Handlebars from 'handlebars';
 import { z } from 'zod';
 import type { Node,PromptFM } from '../types.js';
+import { parseCron } from '../graph/cron.js';
 
 export const slugify=(value:unknown):string=>String(value??'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
 const handlebars=Handlebars.create();
@@ -17,7 +18,7 @@ const foreach=z.union([z.string().transform(from=>({from,as:'item'})),z.object({
 export const frontmatterSchema=z.object({
   id:z.string().optional(),description:z.string().optional(),inputs:z.array(z.string()).default([]),outputs:z.array(z.string()).default([]),foreach:foreach.optional(),vars:z.record(z.string(),z.unknown()).default({}),
   tools:z.object({parallel:z.union([z.boolean(),z.array(z.string())]).default(['search','extract']),composio:z.array(z.string()).default([]),shell:z.boolean().default(false)}).default({parallel:['search','extract'],composio:[],shell:false}),
-  model:z.string().optional(),mode:z.enum(['auto','manual']).default('auto'),plan:z.enum(['auto','manual']).default('auto'),timeout:z.string().optional(),budget_usd:z.number().positive().optional(),parallel:z.object({max_processor:z.string().optional()}).optional(),incremental:z.boolean().default(true),export:z.array(z.enum(['pdf'])).default([]),derived_from:z.string().optional(),schedule:z.string().optional(),
+  model:z.string().optional(),mode:z.enum(['auto','manual']).default('auto'),plan:z.enum(['auto','manual']).default('auto'),timeout:z.string().optional(),budget_usd:z.number().positive().optional(),parallel:z.object({max_processor:z.string().optional()}).optional(),incremental:z.boolean().default(true),export:z.array(z.enum(['pdf'])).default([]),derived_from:z.string().optional(),schedule:z.string().refine(value=>{try{parseCron(value);return true;}catch{return false;}},'Invalid five-field cron schedule').optional(),
 });
 export function parsePrompt(source:string,promptPath:string):{fm:PromptFM;body:string;warnings:string[]} {
   const parsed=matter(source); const warnings=Object.keys(parsed.data).filter(key=>!(key in frontmatterSchema.shape)).map(key=>`${promptPath}: unknown frontmatter key "${key}"`);
