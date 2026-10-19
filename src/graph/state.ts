@@ -21,7 +21,16 @@ export async function applyState(root:string,graph:Graph,state:StateData):Promis
   }else{node.status='stale';node.reason=!success?'never run':Object.values(outputs).includes('missing')?'output missing':'prompt, input, model or scheduled tick changed';}
  }
  for(const node of graph.nodes){if(node.status!=='stale')continue;const missing=await Promise.all(node.inputs.map(async p=>(await fileHash(path.join(root,p)))==='missing'?p:null));if(missing.some(Boolean)&&node.dependencies.every(id=>{const upstream=graph.nodes.find(n=>n.id===id);return upstream&&['fresh','modified','awaiting-approval'].includes(upstream.status);})){node.status='blocked';node.reason='missing input '+missing.filter(Boolean).join(', ');}}
- // Surface upstream failures rather than leaving a misleading runnable stale node.
- for(let i=0;i<graph.nodes.length;i++)for(const node of graph.nodes){if(['invalid','pending-expansion','running','fresh','modified','awaiting-approval'].includes(node.status))continue;const upstream=node.dependencies.map(id=>graph.nodes.find(n=>n.id===id));if(upstream.some(n=>n&&['failed','invalid','blocked'].includes(n.status))){node.status='blocked';node.reason='upstream failed or blocked';}}
+ // Staleness propagates for display while upstream work is pending. On rebuild,
+ // unchanged upstream output content restores a downstream node's fresh baseline.
+ for(let i=0;i<graph.nodes.length;i++)for(const node of graph.nodes){
+  if(['invalid','pending-expansion','running','modified','failed'].includes(node.status)||node.kind==='fanout')continue;
+  const upstream=node.dependencies.map(id=>graph.nodes.find(n=>n.id===id));
+  if(upstream.some(n=>n&&['failed','invalid','blocked'].includes(n.status))){node.status='blocked';node.reason='upstream failed or blocked';}
+  else if(upstream.some(n=>n&&(['stale','queued','running','pending-expansion'].includes(n.status)||(n.kind==='fanout'&&n.status==='awaiting-approval')))){
+   if(node.status==='fresh'||node.status==='awaiting-approval'){node.status='stale';node.reason='upstream changed; waiting for its outputs';}
+  }
+ }
+
  return graph;
 }
