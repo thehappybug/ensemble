@@ -128,4 +128,6 @@ if (process.argv.includes('--real') && stored) {
     await realCore.dispose('smoke complete');
   }
 }
-console.log(JSON.stringify(report, null, 2));
+const reportIndex=process.argv.indexOf('--report');
+if(reportIndex>=0)await writeFile(process.argv[reportIndex+1],JSON.stringify(report,null,2));
+process.stdout.write(JSON.stringify(report,null,2)+'\n');

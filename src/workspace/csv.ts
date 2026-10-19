@@ -24,3 +24,7 @@ export function parseCSV(source:string):Record<string,string>[] {
     return Object.fromEntries(header.map((name,column)=>[name,values[column]]));
   });
 }
+export function stringifyCSV(rows:Record<string,unknown>[],columns:string[]=Object.keys(rows[0]??{})):string {
+  const escape=(value:unknown):string=>{const text=value==null?'':typeof value==='object'?JSON.stringify(value):String(value);return /[",\r\n]/.test(text)?'"'+text.replace(/"/g,'""')+'"':text;};
+  return [columns.map(escape).join(','),...rows.map(row=>columns.map(column=>escape(row[column])).join(','))].join('\n')+'\n';
+}
